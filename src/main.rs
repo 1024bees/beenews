@@ -1,4 +1,4 @@
-use zero2bees::run;
+use zero2bees::startup::run;
 
 #[tokio::main]
 async fn main() {
