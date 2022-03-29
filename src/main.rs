@@ -1,7 +1,10 @@
+use zero2bees::configuration::get_configuration;
 use zero2bees::startup::run;
 
 #[tokio::main]
 async fn main() {
-    let listener =std::net::TcpListener::bind("127.0.0.1:3000").expect("could not bind to port 3000");
+    let config = get_configuration().expect("Failed to read configuration");
+    let addr = format!("127.0.0.1:{}", config.application_port);
+    let listener = std::net::TcpListener::bind(addr).expect("could not bind addr");
     run(listener).await.expect("Starting app failed");
 }
