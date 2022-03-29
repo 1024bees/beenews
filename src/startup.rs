@@ -4,18 +4,18 @@ use axum::{
     Router,
 };
 
-
-
-
 use super::routes::health_check;
 use super::routes::subscribe;
 
 use std::future::Future;
 use std::sync::Arc;
 
+use sqlx::PgPool;
 use std::net::TcpListener;
-use sqlx::PgConnection ;
-pub fn run(listener: TcpListener, connection: PgConnection) -> impl Future<Output = Result<(), hyper::Error>> {
+pub fn run(
+    listener: TcpListener,
+    connection: PgPool,
+) -> impl Future<Output = Result<(), hyper::Error>> {
     let app = Router::new()
         .route("/health_check", get(health_check))
         .route("/subscriptions", post(subscribe))

@@ -1,10 +1,10 @@
-use sqlx::{Connection, PgConnection};
+use sqlx::PgPool;
 use zero2bees::configuration::get_configuration;
 use zero2bees::startup::run;
 #[tokio::main]
 async fn main() {
     let configuration = get_configuration().expect("Failed to read configuration.");
-    let connection = PgConnection::connect(&configuration.database.connection_string())
+    let connection = PgPool::connect(&configuration.database.connection_string())
         .await
         .expect("Failed to connect to Postgres.");
 
