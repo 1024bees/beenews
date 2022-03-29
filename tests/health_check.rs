@@ -2,17 +2,26 @@ use sqlx::{Connection, PgConnection};
 use std::net::TcpListener;
 use zero2bees::configuration::get_configuration;
 use zero2bees::startup::run;
-fn spawn_app() -> String {
+async fn spawn_app() -> String {
+    let configuration = get_configuration().expect("Failed to read configuration");
+    let connection_string = configuration.database.connection_string();
+
+    // The `Connection` trait MUST be in scope for us to invoke
+    // `PgConnection::connect` - it is not an inherent method of the struct!
+    let connection = PgConnection::connect(&connection_string)
+        .await
+        .expect("Failed to connect to Postgres.");
+
     let listener = TcpListener::bind("127.0.0.1:0").expect("Could not bind to ephermal port");
     let port = listener.local_addr().expect("Malformed address").port();
-    let server = run(listener);
+    let server = run(listener, connection);
     tokio::spawn(server);
     format!("http://127.0.0.1:{}", port)
 }
 
 #[tokio::test]
 async fn health_check_sanity() {
-    let addr = spawn_app();
+    let addr = spawn_app().await;
     let client = reqwest::Client::new();
 
     let resp = client
@@ -27,9 +36,10 @@ async fn health_check_sanity() {
 #[tokio::test]
 /// Tests that subscribe should return a 200 response for valid form data
 async fn subscribe_valid_case() {
-    let addr = spawn_app();
+    let addr = spawn_app().await;
     let configuration = get_configuration().expect("Failed to read configuration");
     let connection_string = configuration.database.connection_string();
+
     // The `Connection` trait MUST be in scope for us to invoke
     // `PgConnection::connect` - it is not an inherent method of the struct!
     let mut connection = PgConnection::connect(&connection_string)

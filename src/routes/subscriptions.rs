@@ -1,6 +1,9 @@
-use axum::extract::Form;
+use std::sync::Arc;
+
+use axum::extract::{Extension, Form};
 
 use axum::{http::StatusCode, response::IntoResponse};
+use sqlx::PgConnection;
 
 #[derive(serde::Deserialize, Debug)]
 pub struct FormData {
@@ -8,7 +11,10 @@ pub struct FormData {
     name: String,
 }
 
-pub async fn subscribe(Form(form): Form<FormData>) -> impl IntoResponse {
+pub async fn subscribe(
+    Form(form): Form<FormData>,
+    Extension(connection): Extension<Arc<PgConnection>>,
+) -> impl IntoResponse {
     println!("form is {:#?}", form);
     StatusCode::OK
 }

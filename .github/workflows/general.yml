@@ -50,7 +50,7 @@ jobs:
 
       - name: Install sqlx-cli 
         uses: actions-rs/cargo@v1
-        if: steps.cache-sqlx.outputs.cache-hit == false
+        #if: steps.cache-sqlx.outputs.cache-hit == false
         with:
           command: install 
           args: >
@@ -65,7 +65,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install libpq-dev -y
-          sudo apt-get install postgresql-client -y
+          sudo apt-get install postgresql-client-12 -y
           SKIP_DOCKER=true ./scripts/init_db.sh
 
       - name: Run cargo test
