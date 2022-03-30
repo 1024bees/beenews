@@ -15,7 +15,7 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: password
-          POSTGRES_DB: postgres
+          POSTGRES_DB: newsletter
         ports:
           - 5432:5432
     env:
@@ -124,7 +124,7 @@ jobs:
 
       - name: Install sqlx-cli 
         uses: actions-rs/cargo@v1
-        if: steps.cache-sqlx.outputs.cache-hit == false
+        #if: steps.cache-sqlx.outputs.cache-hit == false
         with:
           command: install 
           args: >
@@ -137,8 +137,9 @@ jobs:
 
       - name: Migrate database
         run: |
+          sudo apt-get update
           sudo apt-get install libpq-dev -y
-          sudo apt-get install postgresql-client -y
+          sudo apt-get install postgresql-client-12 -y
           SKIP_DOCKER=true ./scripts/init_db.sh
       - name: Run clippy
         uses: actions-rs/clippy-check@v1
