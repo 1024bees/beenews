@@ -19,12 +19,6 @@ pub fn run(
     listener: TcpListener,
     connection: PgPool,
 ) -> impl Future<Output = Result<(), hyper::Error>> {
-    //env_logger::Builder::from_env(Env:: default () . default_filter_or("info")) . init() ;
-    //
-    //
-    //
-    //
-
     let app = Router::new()
         .route("/health_check", get(health_check))
         .route("/subscriptions", post(subscribe))
