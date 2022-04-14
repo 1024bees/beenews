@@ -12,6 +12,7 @@ pub struct FormData {
     email: String,
     name: String,
 }
+
 #[tracing::instrument(
     name = "Adding a new subscriber" ,
     skip(form , connection) ,
