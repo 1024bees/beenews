@@ -3,6 +3,7 @@ use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use uuid::Uuid;
 use zero2bees::configuration::{get_configuration, DatabaseSettings};
+use zero2bees::email_client::EmailClient;
 use zero2bees::startup::run;
 use zero2bees::telemetry::{get_subscriber, init_subscriber};
 
@@ -39,7 +40,14 @@ async fn spawn_app() -> TestApp {
     let connection = configure_database(&configuration.database).await;
     let listener = TcpListener::bind("127.0.0.1:0").expect("Could not bind to ephermal port");
     let port = listener.local_addr().expect("Malformed address").port();
-    let server = run(listener, connection.clone());
+
+    let sender_email = configuration
+        .email_client
+        .sender()
+        .expect("Invalid sender email address.");
+    let email_client = EmailClient::new(configuration.email_client.base_url, sender_email);
+
+    let server = run(listener, connection.clone(), email_client);
     tokio::spawn(server);
     TestApp {
         address: format!("http://127.0.0.1:{}", port),

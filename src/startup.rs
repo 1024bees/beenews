@@ -4,6 +4,8 @@ use axum::{
     Router,
 };
 
+use crate::email_client::EmailClient;
+
 use super::routes::{health_check, subscribe};
 use tower_http::trace::TraceLayer;
 
@@ -18,6 +20,7 @@ use std::sync::Arc;
 pub fn run(
     listener: TcpListener,
     connection: PgPool,
+    email_client: EmailClient
 ) -> impl Future<Output = Result<(), hyper::Error>> {
     let app = Router::new()
         .route("/health_check", get(health_check))
@@ -43,7 +46,8 @@ pub fn run(
         // This layer creates a new id for each request and puts it into the request extensions.
         // Note that it should be added after the Trace layer.
         .layer(RequestIdLayer)
-        .layer(Extension(Arc::new(connection)));
+        .layer(Extension(Arc::new(connection)))
+        .layer(Extension(Arc::new(email_client)));
 
     axum::Server::from_tcp(listener)
         .expect("Spawning server from listener failed")
