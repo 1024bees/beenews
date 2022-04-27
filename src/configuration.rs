@@ -9,7 +9,7 @@ use crate::domain::SubscriberEmail;
 pub struct Settings {
     pub application: ApplicationSetting,
     pub database: DatabaseSettings,
-    pub email_client: EmailClientSettings
+    pub email_client: EmailClientSettings,
 }
 #[derive(serde::Deserialize)]
 pub struct ApplicationSetting {
@@ -34,6 +34,7 @@ pub struct DatabaseSettings {
 pub struct EmailClientSettings {
     pub base_url: String,
     pub sender_email: String,
+    pub authorization_token: Secret<String>,
 }
 
 impl EmailClientSettings {
