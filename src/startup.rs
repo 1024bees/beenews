@@ -10,7 +10,7 @@ use axum::{
 use sqlx::PgPool;
 use std::future::Future;
 use std::net::TcpListener;
-use std::pin::Pin;
+
 use std::sync::Arc;
 use tower_http::trace::TraceLayer;
 use tower_request_id::{RequestId, RequestIdLayer};

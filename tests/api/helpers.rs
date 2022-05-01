@@ -1,7 +1,7 @@
 use once_cell::sync::Lazy;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use uuid::Uuid;
-use zero2bees::configuration::{self, get_configuration, DatabaseSettings};
+use zero2bees::configuration::{get_configuration, DatabaseSettings};
 use zero2bees::startup::{get_connection_pool, Application};
 use zero2bees::telemetry::{get_subscriber, init_subscriber};
 

@@ -1,7 +1,7 @@
-use sqlx::postgres::PgPoolOptions;
+
 use zero2bees::configuration::get_configuration;
-use zero2bees::email_client::EmailClient;
-use zero2bees::startup::{run, Application};
+
+use zero2bees::startup::{Application};
 use zero2bees::telemetry::{get_subscriber, init_subscriber};
 
 #[tokio::main]
