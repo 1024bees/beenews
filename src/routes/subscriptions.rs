@@ -8,7 +8,10 @@ use chrono::Utc;
 use sqlx::PgPool;
 use uuid::Uuid;
 
-use crate::domain::{NewSubscriber, SubscriberEmail, SubscriberName};
+use crate::{
+    domain::{NewSubscriber, SubscriberEmail, SubscriberName},
+    email_client::EmailClient,
+};
 
 #[derive(serde::Deserialize, Debug)]
 pub struct FormData {
@@ -27,7 +30,7 @@ impl TryFrom<FormData> for NewSubscriber {
 
 #[tracing::instrument(
     name = "Adding a new subscriber" ,
-    skip(form , connection) ,
+    skip(form , connection, email_client) ,
     fields(
         subscriber_email = % form.email ,
         subscriber_name = % form.name
@@ -37,6 +40,7 @@ impl TryFrom<FormData> for NewSubscriber {
 pub async fn subscribe(
     Form(form): Form<FormData>,
     Extension(connection): Extension<Arc<PgPool>>,
+    Extension(email_client): Extension<Arc<EmailClient>>,
 ) -> impl IntoResponse {
     let new_subscriber = match form.try_into() {
         Ok(sub) => sub,
@@ -46,12 +50,27 @@ pub async fn subscribe(
     // Spans, like logs, have an associated level
     // `info_span` creates a span at the info-level
     match insert_subscriber(&connection, &new_subscriber).await {
-        Ok(_) => StatusCode::OK,
+        Ok(_) => {}
         Err(e) => {
             tracing::error!("Failed to execute query: {:?}", e);
-            StatusCode::INTERNAL_SERVER_ERROR
+            return StatusCode::INTERNAL_SERVER_ERROR;
         }
     }
+
+    if email_client
+        .send_email(
+            new_subscriber.email,
+            "Welcome!",
+            "Welcome to our newsletter!",
+            "Welcome to our newsletter!",
+        )
+        .await
+        .is_err()
+    {
+        return StatusCode::INTERNAL_SERVER_ERROR;
+    }
+
+    StatusCode::OK
 }
 
 #[tracing::instrument(
