@@ -46,7 +46,6 @@ impl EmailClient {
     ) -> Result<(), reqwest::Error> {
         // You can do better using `reqwest::Url::join` if you change
         // `base_url`'s type from `String` to `reqwest::Url`.
-        // I'll leave it as an exercise for the reader!
         let url = format!("{}/email", self.base_url);
         let request_body = SendEmailRequest {
             from: self.sender.as_ref(),

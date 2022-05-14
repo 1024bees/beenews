@@ -1,4 +1,4 @@
-use super::routes::{health_check, subscribe};
+use super::routes::{confirm, health_check, subscribe};
 use crate::email_client::EmailClient;
 use axum::body::Body;
 use axum::http::Request;
@@ -24,36 +24,19 @@ pub fn get_connection_pool(configuration: &DatabaseSettings) -> PgPool {
         .connect_lazy_with(configuration.with_db())
 }
 
-pub async fn build(configuration: Settings) -> impl Future<Output = Result<(), hyper::Error>> {
-    let connection = get_connection_pool(&configuration.database);
-    // Build an `EmailClient` using `configuration`
-    let sender_email = configuration
-        .email_client
-        .sender()
-        .expect("Invalid sender email address.");
-    let timeout = configuration.email_client.timeout();
-    let email_client = EmailClient::new(
-        configuration.email_client.base_url,
-        sender_email,
-        configuration.email_client.authorization_token,
-        timeout,
-    );
-
-    let config = get_configuration().expect("Failed to read configuration");
-    let addr = format!("{}:{}", config.application.host, config.application.port);
-    tracing::info!("starting app at {}", addr);
-    let listener = std::net::TcpListener::bind(addr).expect("could not bind addr");
-    run(listener, connection, email_client)
-}
+// We need to define a wrapper type in order to retrieve the URL
+// in the `subscribe` handler.
 
 pub fn run(
     listener: TcpListener,
     connection: PgPool,
     email_client: EmailClient,
+    base_url: String,
 ) -> impl Future<Output = Result<(), hyper::Error>> {
     let app = Router::new()
         .route("/health_check", get(health_check))
         .route("/subscriptions", post(subscribe))
+        .route("/subscriptions/confirm", get(confirm))
         .layer(
             // Let's create a tracing span for each request
             TraceLayer::new_for_http().make_span_with(|request: &Request<Body>| {
@@ -76,6 +59,7 @@ pub fn run(
         // Note that it should be added after the Trace layer.
         .layer(RequestIdLayer)
         .layer(Extension(Arc::new(connection)))
+        .layer(Extension(base_url.clone()))
         .layer(Extension(Arc::new(email_client)));
 
     axum::Server::from_tcp(listener)
@@ -89,6 +73,7 @@ pub struct Application {
     listener: TcpListener,
     connection_pool: PgPool,
     email_client: EmailClient,
+    base_url: String,
 }
 impl Application {
     // We have converted the `build` function into a constructor for
@@ -119,6 +104,7 @@ impl Application {
             connection_pool,
             email_client,
             port,
+            base_url: configuration.application.base_url,
         })
     }
     pub fn port(&self) -> u16 {
@@ -127,6 +113,12 @@ impl Application {
     // A more expressive name that makes it clear that
     // this function only returns when the application is stopped.
     pub async fn run_until_stopped(self) -> Result<(), hyper::Error> {
-        run(self.listener, self.connection_pool, self.email_client).await
+        run(
+            self.listener,
+            self.connection_pool,
+            self.email_client,
+            self.base_url,
+        )
+        .await
     }
 }
